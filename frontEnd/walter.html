@@ -1,0 +1,208 @@
+<!--
+ * @Author: Theo_hui
+ * @Date: 2020-10-13 18:36:41
+ * @Descripttion: 
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Walter系统模拟</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">   
+</head>
+<body>
+    <div id="app">
+        <el-row gutter="50" justify="center" type="flex" style="margin-top: 100px;">
+            <el-col :span="10">
+                <el-card class="box-card" shadow="always">
+                    <div slot="header" class="clearfix">
+                      <span><i class="el-icon-s-home" style="font-size:30px"></i> <span style="font-size: 30px;"> server 0</span>       127.0.0.1:5000</span>
+                      <el-button style="float: right; padding: 3px 0" type="text"><el-button plain @click="flushsite00" >刷新状态</el-button></el-button>
+                    </div>
+                    <div class="text item" style="color:gray">
+                        <p>currentSeqNo:{{site00.currentSeqNo}}</p>
+                        <p>CommittedVTS:{{site00.CommittedVTS}}</p>
+                        <p>GotVTS:{{site00.GotVTS}}</p>
+                    </div>
+                    <el-divider><i class="el-icon-s-data"></i> History</el-divider>
+                    <div class="text item" style="padding-top: 20px;">
+                        <el-collapse >
+                            <el-collapse-item v-for="(value,key,index) in site00.myHistory">
+                                <template slot="title">
+                                    <el-tag style="margin-left: 2px;">{{key}}</el-tag>
+                                </template>
+                                <li v-for="his in value">{{his}}</li>
+                            </el-collapse-item>
+                            <el-collapse-item v-for="(value,key,index) in site00.otherHistory">
+                                <template slot="title">
+                                    <el-tag type="danger" style="margin-left: 2px;">{{key}}</el-tag>
+                                </template>
+                                <li v-for="his in value">{{his}}</li>
+                            </el-collapse-item>
+                          </el-collapse>
+                    </div>
+                </el-card>
+                <el-card class="box-card" style="margin-block-start: 20px;">
+                <div class="item text">
+                    <el-avatar > Alice</el-avatar>
+                </div>
+                <div class="item text">
+                    <el-tabs>
+                        <el-tab-pane label="事务1" name="first">
+                            <el-col>
+                                <el-row :span="12">
+                                    <el-input
+                                    type="textarea"
+                                    :rows="4"
+                                    v-model="AliceT1">
+                                    </el-input>
+                                </el-row>
+                                <el-row :span="12">
+                                    <el-input
+                                    type="textarea"
+                                    :rows="4"
+                                    v-model="AliceT1Result">
+                                    </el-input>
+                                </el-row>
+                            </el-col>
+                            <el-button type="primary" size="small" @click="TransAliceT1">执行</el-button>
+                        </el-tab-pane>
+                        <el-tab-pane label="事务2" name="second">
+                            <el-input
+                                type="textarea"
+                                :rows="4"
+                                v-model="AliceT2">
+                            </el-input>
+                            <el-button type="primary" size="small">执行</el-button>
+                        </el-tab-pane>
+                    </el-tabs>
+                </div>
+                </el-card>
+            </el-col>
+            <el-col :span="10">
+                <el-card class="box-card" shadow="always">
+                    <div slot="header" class="clearfix">
+                      <span><i class="el-icon-s-home" style="font-size:30px"></i> <span style="font-size: 30px;"> server 1</span>       127.0.0.1:5001</span>
+                      <el-button style="float: right; padding: 3px 0" type="text"><el-button plain @click="flushsite01">刷新状态</el-button></el-button>
+                    </div>
+                    <div class="text item" style="color:gray">
+                        <p>currentSeqNo:{{site01.currentSeqNo}}</p>
+                        <p>CommittedVTS:{{site01.CommittedVTS}}</p>
+                        <p>GotVTS:{{site01.GotVTS}}</p>
+                    </div>
+                    <el-divider><i class="el-icon-s-data"></i> History</el-divider>
+                    <div class="text item" style="padding-top: 20px;">
+                        <el-collapse >
+                            <el-collapse-item v-for="(value,key,index) in site01.myHistory">
+                                <template slot="title">
+                                    <el-tag style="margin-left: 2px;">{{key}}</el-tag>
+                                </template>
+                                <li v-for="his in value">{{his}}</li>
+                            </el-collapse-item>
+                            <el-collapse-item v-for="(value,key,index) in site01.otherHistory">
+                                <template slot="title">
+                                    <el-tag type="danger" style="margin-left: 2px;">{{key}}</el-tag>
+                                </template>
+                                <li v-for="his in value">{{his}}</li>
+                            </el-collapse-item>
+                          </el-collapse>
+                    </div>
+                </el-card>
+
+                <el-card class="box-card" style="margin-block-start: 20px;">
+                    <div class="item text">
+                        <el-avatar > Bob</el-avatar>
+                    </div>
+                    <div class="item text">
+                        <el-tabs>
+                            <el-tab-pane label="事务1" name="first">
+                                <el-col>
+                                    <el-row :span="12">
+                                        <el-input
+                                        type="textarea"
+                                        :rows="4"
+                                        v-model="BobT1">
+                                        </el-input>
+                                    </el-row>
+                                    <el-row :span="12">
+                                        <el-input
+                                        type="textarea"
+                                        :rows="4"
+                                        v-model="BobT1Result">
+                                        </el-input>
+                                    </el-row>
+                                </el-col>
+                                <el-button type="primary" size="small" @click="TransBobT1">执行</el-button>
+                            </el-tab-pane>
+                            <el-tab-pane label="事务2" name="second">
+                                <el-input
+                                    type="textarea"
+                                    :rows="4"
+                                    v-model="AliceT2">
+                                </el-input>
+                                <el-button type="primary" size="small">执行</el-button>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </div>
+                    </el-card>
+            </el-col>
+        </el-row>
+    </div>
+</body>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data:{
+            "site00":{},
+            "site01":{},
+            //Alice的事务
+            AliceT1:"[\n\
+    [\"write\",\"ssA01\",\"修改后Alice的说说1\"],\n\
+    [\"read\",\"ssA01\"]\n\
+]",
+            AliceT1Result:""
+            },
+        methods:{
+            //刷新site00
+            flushsite00:function(){
+                var vm=this;
+                axios.get('http://127.0.0.1:5000/flush')
+                     .then(function(res){
+                        vm.site00=res.data
+                     })
+                     .catch(function(erroe){
+                        console.log("请求API失败")
+                     })
+                },
+                flushsite01:function(){
+                var vm=this;
+                axios.get('http://127.0.0.1:5001/flush')
+                     .then(function(res){
+                        vm.site01=res.data
+                     })
+                     .catch(function(erroe){
+                        console.log("请求API失败")
+                     })
+                },
+            //上传事务AliceT1
+            TransAliceT1:function(){
+                var vm=this;
+                axios.post('http://127.0.0.1:5000/transaction',JSON.parse(this.AliceT1))
+                     .then(function(res){
+                        console.log("请求API成功")
+                        vm.AliceT1Result=JSON.stringify(res.data)
+                     })
+                     .catch(function(erroe){
+                        console.log("请求API失败")
+                     })
+                },
+            },
+    })
+</script>
+</html>
