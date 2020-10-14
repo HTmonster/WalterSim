@@ -11,16 +11,18 @@
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">   
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> 
+    <link rel="icon" href="图标地址" type="image/x-icon">  
+    
 </head>
 <body>
     <div id="app">
-        <el-row gutter="50" justify="center" type="flex" style="margin-top: 100px;">
+        <el-row gutter="50" justify="center" type="flex" style="margin-top: 10px;">
             <el-col :span="10">
                 <el-card class="box-card" shadow="always">
                     <div slot="header" class="clearfix">
                       <span><i class="el-icon-s-home" style="font-size:30px"></i> <span style="font-size: 30px;"> server 0</span>       127.0.0.1:5000</span>
-                      <el-button style="float: right; padding: 3px 0" type="text"><el-button plain @click="flushsite00" >刷新状态</el-button></el-button>
+                      <el-button style="float: right; padding: 3px 0" type="text"><el-button plain @click="flushsite00" ><i class="el-icon-refresh"></i>刷新状态</el-button></el-button>
                     </div>
                     <div class="text item" style="color:gray">
                         <p>currentSeqNo:{{site00.currentSeqNo}}</p>
@@ -52,31 +54,33 @@
                 <div class="item text">
                     <el-tabs>
                         <el-tab-pane label="事务1" name="first">
-                            <el-col>
-                                <el-row :span="12">
-                                    <el-input
-                                    type="textarea"
-                                    :rows="4"
-                                    v-model="AliceT1">
-                                    </el-input>
-                                </el-row>
-                                <el-row :span="12">
-                                    <el-input
-                                    type="textarea"
-                                    :rows="4"
-                                    v-model="AliceT1Result">
-                                    </el-input>
-                                </el-row>
-                            </el-col>
-                            <el-button type="primary" size="small" @click="TransAliceT1">执行</el-button>
+                            <p>发表说说</p>
+                            <el-input
+                            type="textarea"
+                            :rows="4"
+                            v-model="AliceT1">
+                            </el-input>
+                            <el-input
+                            type="textarea"
+                            :rows="4"
+                            v-model="AliceT1Result">
+                            </el-input>
+                            <el-button type="primary" size="small" @click="TransAliceT1">执行AT1</el-button>
                         </el-tab-pane>
                         <el-tab-pane label="事务2" name="second">
+                            <p>添加Eva好友</p>
                             <el-input
                                 type="textarea"
                                 :rows="4"
                                 v-model="AliceT2">
                             </el-input>
-                            <el-button type="primary" size="small">执行</el-button>
+                            <el-input
+                                type="textarea"
+                                :rows="4"
+                                v-model="AliceT2Result">
+                            </el-input>
+                            <span>延迟执行/ms</span> <el-input-number v-model="AliceT2Delay"  :min="1" :max="10000" size="mini" step=500></el-input-number>
+                            <el-button type="primary" size="small" @click="TransAliceT2">执行</el-button>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
@@ -86,7 +90,7 @@
                 <el-card class="box-card" shadow="always">
                     <div slot="header" class="clearfix">
                       <span><i class="el-icon-s-home" style="font-size:30px"></i> <span style="font-size: 30px;"> server 1</span>       127.0.0.1:5001</span>
-                      <el-button style="float: right; padding: 3px 0" type="text"><el-button plain @click="flushsite01">刷新状态</el-button></el-button>
+                      <el-button style="float: right; padding: 3px 0" type="text"><el-button plain @click="flushsite01"><i class="el-icon-refresh"></i>刷新状态</el-button></el-button>
                     </div>
                     <div class="text item" style="color:gray">
                         <p>currentSeqNo:{{site01.currentSeqNo}}</p>
@@ -111,7 +115,6 @@
                           </el-collapse>
                     </div>
                 </el-card>
-
                 <el-card class="box-card" style="margin-block-start: 20px;">
                     <div class="item text">
                         <el-avatar > Bob</el-avatar>
@@ -119,35 +122,39 @@
                     <div class="item text">
                         <el-tabs>
                             <el-tab-pane label="事务1" name="first">
-                                <el-col>
-                                    <el-row :span="12">
-                                        <el-input
-                                        type="textarea"
-                                        :rows="4"
-                                        v-model="BobT1">
-                                        </el-input>
-                                    </el-row>
-                                    <el-row :span="12">
-                                        <el-input
-                                        type="textarea"
-                                        :rows="4"
-                                        v-model="BobT1Result">
-                                        </el-input>
-                                    </el-row>
-                                </el-col>
-                                <el-button type="primary" size="small" @click="TransBobT1">执行</el-button>
-                            </el-tab-pane>
-                            <el-tab-pane label="事务2" name="second">
+                                <p>评论Alice</p>
                                 <el-input
                                     type="textarea"
                                     :rows="4"
-                                    v-model="AliceT2">
+                                    v-model="BobT1">
                                 </el-input>
-                                <el-button type="primary" size="small">执行</el-button>
+                                <el-input
+                                    type="textarea"
+                                    :rows="4"
+                                    v-model="BobT1Result">
+                                </el-input>
+                                <el-button type="primary" size="small" @click="TransBobT1">执行</el-button>
+                            </el-tab-pane>
+                            <el-tab-pane label="事务2" name="second">
+                                <p>添加Eva好友</p>
+                                <el-input
+                                    type="textarea"
+                                    :rows="4"
+                                    v-model="BobT2">
+                                </el-input>
+                                <el-input
+                                    type="textarea"
+                                    :rows="4"
+                                    v-model="BobT2Result">
+                                </el-input>
+                                <el-button type="primary" size="small" @click="TransBobT2">执行</el-button>
                             </el-tab-pane>
                         </el-tabs>
                     </div>
-                    </el-card>
+                </el-card>
+                <el-card lass="box-card" style="margin-block-start: 20px;">
+                    <el-avatar > Eva</el-avatar>
+                </el-card>
             </el-col>
         </el-row>
     </div>
@@ -159,14 +166,33 @@
     new Vue({
         el: '#app',
         data:{
-            "site00":{},
-            "site01":{},
-            //Alice的事务
+            site00:{},
+            site01:{},
+            //定时
+            timer:null,
+            //AliceT2的执行延时
+            AliceT2Delay:1000,
+            //Alice的事务T1
             AliceT1:"[\n\
-    [\"write\",\"ssA01\",\"修改后Alice的说说1\"],\n\
+    [\"write\",\"ssA01\",\"Alice的说说1\"],\n\
     [\"read\",\"ssA01\"]\n\
 ]",
-            AliceT1Result:""
+            AliceT1Result:"",
+            AliceT2:"[\n\
+    [\"setAdd\",\"flEve\",\"Alice\"],\n\
+    [\"setRead\",\"flEve\"]\n\
+]",
+            AliceT2Result:"",
+            //Bob的事务T1 T2
+            BobT1:"[ [\"write\",\"ssB01\",\"Bob的说说1\"],\n\
+    [\"write\",\"ssA01\",\"Alice的说说1 (Bob 评论说：点赞)\"],\n\
+    [\"read\",\"ssA01\"]\n\
+]",         BobT1Result:"",
+            BobT2:"[\n\
+    [\"setAdd\",\"flEve\",\"Bob\"],\n\
+    [\"setRead\",\"flEve\"]\n\
+]",
+            BobT2Result:""
             },
         methods:{
             //刷新site00
@@ -175,6 +201,11 @@
                 axios.get('http://127.0.0.1:5000/flush')
                      .then(function(res){
                         vm.site00=res.data
+                        //暂停一段时间后联合更新
+                        clearTimeout(this.timer);  
+                        this.timer = setTimeout(()=>{   
+                            vm.flushsite01()
+                        },500);
                      })
                      .catch(function(erroe){
                         console.log("请求API失败")
@@ -197,12 +228,57 @@
                      .then(function(res){
                         console.log("请求API成功")
                         vm.AliceT1Result=JSON.stringify(res.data)
+                        vm.flushsite00()
                      })
                      .catch(function(erroe){
                         console.log("请求API失败")
                      })
                 },
-            },
+            //上传事务AliceT2
+            TransAliceT2:function(){
+
+                clearTimeout(this.timer);  //清除延迟执行
+ 
+                this.timer = setTimeout(()=>{   //设置延迟执行
+                    var vm=this;
+                    axios.post('http://127.0.0.1:5000/transaction',JSON.parse(this.AliceT2))
+                     .then(function(res){
+                        console.log("AT2请求API成功")
+                        vm.AliceT2Result=JSON.stringify(res.data)
+                        vm.flushsite00()
+                     })
+                     .catch(function(erroe){
+                        console.log("AT1请求API失败")
+                     })
+                },this.AliceT2Delay);
+                },
+            //上传事务BobT1
+            TransBobT1:function(){
+                var vm=this;
+                axios.post('http://127.0.0.1:5001/transaction',JSON.parse(this.BobT1))
+                     .then(function(res){
+                        console.log("请求API成功")
+                        vm.BobT1Result=JSON.stringify(res.data)
+                        vm.flushsite01()
+                     })
+                     .catch(function(erroe){
+                        console.log("请求API失败")
+                     })
+                },
+            //上传事务AliceT2
+            TransBobT2:function(){
+                var vm=this;
+                axios.post('http://127.0.0.1:5001/transaction',JSON.parse(this.BobT2))
+                     .then(function(res){
+                        console.log("请求API成功")
+                        vm.BobT2Result=JSON.stringify(res.data)
+                        vm.flushsite01()
+                     })
+                     .catch(function(erroe){
+                        console.log("请求API失败")
+                     })
+                },
+        }
     })
 </script>
 </html>
