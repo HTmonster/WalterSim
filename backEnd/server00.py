@@ -46,17 +46,13 @@ objects={
    #本站点首先
    "ssA01":{
       "prefID":0,#首站点id
-      "data":"Alice的说说1。"
    },
-   "ssA02":{
-      "prefID":0,#首站点id
-      "data":"Alice的说说2。"
-   },
-
    #非本站点首先
    "ssB01":{
       "prefID":1,#首站点id
-      "data":"Bob的说说1。"
+   },
+   "flEve":{
+      "prefID":1,#首站点id
    }
 }
 
@@ -66,15 +62,15 @@ object_locks_mutex=threading.Lock() #对象锁互斥锁
 #========================公共变量区=======================#
 
 
-currentSeqNo=0                    # 当前的序列编号
+currentSeqNo=0                      # 当前的序列编号
 CommittedVTS = [0,0]              # 提交的时间向量
 GotVTS       = [0,0]              # 接收站点时间向量
 
  # 历史记录
 History = {
    # oid： [[ ['WRITE', oid,     data],        <site,seqno>],]
-   "ssA01":[[['WRITE',"ssA01","Alice的说说1。"],[0,-1]],],
-   "ssA02":[[['WRITE',"ssA02","Alice的说说2。"],[0,-1]],]
+   # "ssA01":[[['WRITE',"ssA01","Alice的说说1。"],[0,-1]],],
+   # "ssA02":[[['WRITE',"ssA02","Alice的说说2。"],[0,-1]],]
 }                       
 
 ThreadLock=threading.Lock()         # 多线程锁
@@ -112,8 +108,10 @@ def prepare_lock(tid,oids,startVTS,retlist):
    for oid in oids:
       #没有修改且没有加锁
       if unmodified(oid,startVTS) and oid not in object_locks.keys():
+         
          continue
       else:
+         print(unmodified(oid,startVTS))
          retlist.append(False) #返回假
          break
    else:
@@ -202,7 +200,46 @@ def read(x, oid):
 
 # 集合读
 def setRead(x,setid):
-  return read(x,setid)
+   # 1.返回x中反应oid的
+   states = []
+   for s in x['updates']:
+      if s[1] == setid:
+         states.append(s)
+   # 2. 返回历史中最新的提交
+   hiss=history_VTS_visible(setid,x['startVTS'])
+
+   # 3 非本站点 请求返回
+   if is_oid_locally_replicated(setid):
+      prefID=get_oid_preferred_sites_id(setid)
+      siteUrl=servers[prefID][3]
+      # 远程请求
+      res=requests.post(siteUrl+"/history",json={"oid":setid,"VTS":x['startVTS']})
+      site_hiss=json.loads(res.text).get('data')
+      hiss+=site_hiss
+   
+   # 解析数据
+   data={}
+   for state in states:
+      id=state[2]
+      op=state[0]
+      if id not in data.keys():
+         data[id]=0
+      
+      if op == "SET_ADD":
+         data[id]+=1
+      elif op== "SET_DEL":
+         data[id]-=1
+   for his in hiss:
+      id=state[0][2]
+      op=state[0][0]
+      if id not in data.keys():
+         data[id]=0
+      
+      if op == "SET_ADD":
+         data[id]+=1
+      elif op== "SET_DEL":
+         data[id]-=1
+   return data
 
 #-----------------------事务提交---------------------------
 def unmodified(oid,VTS):
@@ -226,7 +263,7 @@ def update(updates,version):
 
 def fastCommit(x):
    ''' 快提交  '''
-   print("\n  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[线程] 快提交━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
+   print("\n  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[线程] 快提交━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
    print("  ┃ ",x)
    global currentSeqNo
 
@@ -238,7 +275,7 @@ def fastCommit(x):
       else:
          # 解锁
          ThreadLock.release()
-         print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━× ABORTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
+         print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━× ABORTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
          x['outcome'] = "ABORTED"
          return x['outcome']
 
@@ -258,7 +295,7 @@ def fastCommit(x):
 
    print("  ┃ ☑ 提交结束")
    x['outcome'] = "COMMITTED"
-   print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━√ COMMITTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
+   print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━√ COMMITTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
 
    #进行传播
    p=multiprocessing.Process(target=propagate,args=(x,))
@@ -268,7 +305,7 @@ def fastCommit(x):
 
 def slowCommit(x):
    ''' 慢提交 '''
-   print("\n  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[线程] 慢提交━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
+   print("\n  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[线程] 慢提交━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
    print("  ┃ ",x)
    global currentSeqNo
 
@@ -289,9 +326,9 @@ def slowCommit(x):
          res=requests.post(serverUrl+"/prepare",json={"tid":x['tid'],"oids":oids,"startVTS":x["startVTS"],"id":siteID})
          vote=json.loads(res.text).get("status")
       else:
-         retLsit=[]
+         retList=[]
          prepare_lock(x['tid'],oids,x["startVTS"],retList)
-         vote=retLsit[0]
+         vote="YES" if retList[0] else "NO"  
       print("  ┃    ▷",vote)
       votes[site]=(True if vote=="YES" else False)
    print("  ┃   ★ 投票结果",votes)
@@ -313,7 +350,7 @@ def slowCommit(x):
       abort_unlock(x["tid"])
       print("  ┃ ☑ 释放结束")
       x['outcome'] = "COMMITTED"
-      print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━√ COMMITTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
+      print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━√ COMMITTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
 
       #进行传播
       p=multiprocessing.Process(target=propagate,args=(x,))
@@ -328,7 +365,7 @@ def slowCommit(x):
             serverUrl=servers[site][3]
             res=requests.post(serverUrl+"/abort",json={"tid":x['tid'],"id":siteID})
       print("  ┃ ☑ 释放结束")
-      print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━× ABORTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
+      print("  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━× ABORTED！━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
       x['outcome'] = "ABORTED"
       return x['outcome']
 
@@ -337,7 +374,7 @@ def commiTx(x):
    #获得写集合
    x['writeset'] = {}
    for update in x['updates']:
-      if 'WRITE' == update[0]:
+      if update[0] in ['WRITE','SET_ADD','SET_DEL'] :
          x['writeset'][update[1]]=update
    #如果所有要写的都是本地的
    print("[3.1] ---------获得写集合---------")
@@ -363,9 +400,9 @@ def commiTx(x):
 
 def propagate(x):
    # 给所有服务器传播同步信号
-   print("╭────────────────────────────────────────────────[进程] 同步传播─────────────────────────────────────────────────────╮")
+   print("╭────────────────────────────────[进程] 同步传播─────────────────────────────────────╮")
    print("│ ",x)
-   print("│ ------------------------------------------------1. 传播----------------------------------------------------------")
+   print("│ --------------------------------------1. 传播--------------------------------------------------------")
    for server in servers:
       # 非本服务器
       if server[2]==False:
@@ -373,12 +410,15 @@ def propagate(x):
          print("│▲  同步到 站点 {} URL:{}".format(server[0],serverUrl))
          res=requests.post(serverUrl+"/propagate",json={"x":x,"id":siteID})
          print("|    ▷",res.text.replace("\n",""))
+         if json.loads(res.text).get("status")=="ERROR":
+            print("╰─────────────────────────────────────────────────────────────────────────────────────╯")
+            return 
          #TODO:f+1 情况 和返回信息确认 先空缺
    # 标志
    print("| ♢事务现在 是 disaster-safe durable")
    x['mark']="disaster-safe durable"
    # 发送信号
-   print("│ ------------------------------------------------2. 灾难安全备份------------------------------------------------------")
+   print("│ ---------------------------------------2. 灾难安全备份------------------------------------------------")
    for server in servers:
       # 非本服务器
       if not server[2]:
@@ -389,7 +429,7 @@ def propagate(x):
    # 标志
    print("| ♢事务现在 是 globally visible")
    x['mark'] = "globally visible"
-   print("╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯")
+   print("╰─────────────────────────────────────────────────────────────────────────────────────╯")
 
 #=======================http 接口区========================#
 
@@ -404,8 +444,6 @@ def flush():
          otherHistory[key]=value
    
    return {"myHistory":myHistory,"otherHistory":otherHistory,"currentSeqNo":currentSeqNo,"CommittedVTS":CommittedVTS,"GotVTS":GotVTS}
-
-
 
 
 #通过本接口处理一个事务 事务内容通过POST进行提交
@@ -452,7 +490,7 @@ def do_propagate():
    print("│=> 接受到来自站点{}传播请求".format(j))
    print("│   事务:",x)
    for i in range(len(x['startVTS'])):
-      if x['startVTS'][i]>GotVTS[i]:
+      if i!=siteID and x['startVTS'][i]>GotVTS[i]:
          print("│   × 条件1不满足",x['startVTS'],GotVTS)
          print("│<= {\"status\":\"ERROR\"}")
          print("╰──────────────────────────────────────────────────────────────────────────╯")
@@ -484,12 +522,12 @@ def do_ds_durable():
    print("│   事务:",x)
    for i in range(len(x['startVTS'])):
       if x['startVTS'][i]>CommittedVTS[i]:
-         print("│   × 条件1不满足",x['startVTS'],GotVTS)
+         print("│   × 条件1不满足",x['startVTS'],CommittedVTS)
          print("│<= {\"status\":\"ERROR\"}")
          print("╰──────────────────────────────────────────────────────────────────────────╯")
          return {"status":"ERROR"},200
    if CommittedVTS[j]!=x['seqno']-1:
-      print("│   × 条件2不满足",x['startVTS'],GotVTS)
+      print("│   × 条件2不满足",x['startVTS'],CommittedVTS)
       print("│<= {\"status\":\"ERROR\"}")
       print("╰──────────────────────────────────────────────────────────────────────────╯")
       return {"status":"ERROR"},200
